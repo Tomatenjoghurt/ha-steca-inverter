@@ -13,6 +13,7 @@ from .entity import AxpertEntity
 
 _LOGGER = logging.getLogger(__name__)
 
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -20,15 +21,16 @@ async def async_setup_entry(
 ) -> None:
     """Set up Axpert number entities."""
     coordinator: AxpertDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
-    
+
     entities = [
-        AxpertMaxChargingCurrent(coordinator),
-        AxpertMaxUtilityChargingCurrent(coordinator),
-        AxpertBatteryCutoffVoltage(coordinator),
-        AxpertBatteryBulkVoltage(coordinator),
-        AxpertBatteryFloatVoltage(coordinator),
+        AxpertMaxChargingCurrent(coordinator, entry),
+        AxpertMaxUtilityChargingCurrent(coordinator, entry),
+        AxpertBatteryCutoffVoltage(coordinator, entry),
+        AxpertBatteryBulkVoltage(coordinator, entry),
+        AxpertBatteryFloatVoltage(coordinator, entry),
     ]
     async_add_entities(entities)
+
 
 class AxpertNumberEntity(AxpertEntity, NumberEntity):
     """Base class for Axpert number entities."""
@@ -36,8 +38,9 @@ class AxpertNumberEntity(AxpertEntity, NumberEntity):
     _attr_has_entity_name = True
     _attr_entity_category = EntityCategory.CONFIG
 
-    def __init__(self, coordinator):
+    def __init__(self, coordinator, entry: ConfigEntry):
         super().__init__(coordinator)
+        self._entry = entry
 
     async def _async_set_value_generic(self, func, value):
         """Generic set value helper."""
@@ -47,20 +50,23 @@ class AxpertNumberEntity(AxpertEntity, NumberEntity):
             self._attr_available = False
             self.async_write_ha_state()
         else:
-            # Invalidate cache and refresh data
             self.coordinator.rated_information = None
             await self.coordinator.async_request_refresh()
 
+
 class AxpertMaxChargingCurrent(AxpertNumberEntity):
     """Entity for Max Charging Current."""
-    
+
     _attr_translation_key = "max_charging_current"
-    _attr_unique_id = "axpert_max_charging_current"
     _attr_native_unit_of_measurement = UnitOfElectricCurrent.AMPERE
     _attr_device_class = NumberDeviceClass.CURRENT
     _attr_native_min_value = 2
     _attr_native_max_value = 120
-    _attr_native_step = 1 # Often 10A steps, but 1 is safe
+    _attr_native_step = 1
+
+    def __init__(self, coordinator, entry: ConfigEntry):
+        super().__init__(coordinator, entry)
+        self._attr_unique_id = f"{entry.entry_id}_max_charging_current"
 
     @property
     def native_value(self) -> float | None:
@@ -71,16 +77,20 @@ class AxpertMaxChargingCurrent(AxpertNumberEntity):
             self.coordinator.inverter.set_max_charging_current, int(value)
         )
 
+
 class AxpertMaxUtilityChargingCurrent(AxpertNumberEntity):
     """Entity for Max Utility Charging Current."""
-    
+
     _attr_translation_key = "max_utility_charging_current"
-    _attr_unique_id = "axpert_max_utility_charging_current"
     _attr_native_unit_of_measurement = UnitOfElectricCurrent.AMPERE
     _attr_device_class = NumberDeviceClass.CURRENT
     _attr_native_min_value = 2
     _attr_native_max_value = 120
     _attr_native_step = 1
+
+    def __init__(self, coordinator, entry: ConfigEntry):
+        super().__init__(coordinator, entry)
+        self._attr_unique_id = f"{entry.entry_id}_max_utility_charging_current"
 
     @property
     def native_value(self) -> float | None:
@@ -91,16 +101,20 @@ class AxpertMaxUtilityChargingCurrent(AxpertNumberEntity):
             self.coordinator.inverter.set_max_utility_charging_current, int(value)
         )
 
+
 class AxpertBatteryCutoffVoltage(AxpertNumberEntity):
     """Entity for Battery Cut-off Voltage."""
-    
+
     _attr_translation_key = "battery_cutoff_voltage"
-    _attr_unique_id = "axpert_battery_cutoff_voltage"
     _attr_native_unit_of_measurement = UnitOfElectricPotential.VOLT
     _attr_device_class = NumberDeviceClass.VOLTAGE
     _attr_native_min_value = 10.0
     _attr_native_max_value = 65.0
     _attr_native_step = 0.1
+
+    def __init__(self, coordinator, entry: ConfigEntry):
+        super().__init__(coordinator, entry)
+        self._attr_unique_id = f"{entry.entry_id}_battery_cutoff_voltage"
 
     @property
     def native_value(self) -> float | None:
@@ -111,16 +125,20 @@ class AxpertBatteryCutoffVoltage(AxpertNumberEntity):
             self.coordinator.inverter.set_battery_cutoff_voltage, float(value)
         )
 
+
 class AxpertBatteryBulkVoltage(AxpertNumberEntity):
     """Entity for Battery Bulk (C.V.) Voltage."""
-    
+
     _attr_translation_key = "battery_bulk_voltage"
-    _attr_unique_id = "axpert_battery_bulk_voltage"
     _attr_native_unit_of_measurement = UnitOfElectricPotential.VOLT
     _attr_device_class = NumberDeviceClass.VOLTAGE
     _attr_native_min_value = 10.0
     _attr_native_max_value = 65.0
     _attr_native_step = 0.1
+
+    def __init__(self, coordinator, entry: ConfigEntry):
+        super().__init__(coordinator, entry)
+        self._attr_unique_id = f"{entry.entry_id}_battery_bulk_voltage"
 
     @property
     def native_value(self) -> float | None:
@@ -131,16 +149,20 @@ class AxpertBatteryBulkVoltage(AxpertNumberEntity):
             self.coordinator.inverter.set_battery_bulk_voltage, float(value)
         )
 
+
 class AxpertBatteryFloatVoltage(AxpertNumberEntity):
     """Entity for Battery Float Voltage."""
-    
+
     _attr_translation_key = "battery_float_voltage"
-    _attr_unique_id = "axpert_battery_float_voltage"
     _attr_native_unit_of_measurement = UnitOfElectricPotential.VOLT
     _attr_device_class = NumberDeviceClass.VOLTAGE
     _attr_native_min_value = 10.0
     _attr_native_max_value = 65.0
     _attr_native_step = 0.1
+
+    def __init__(self, coordinator, entry: ConfigEntry):
+        super().__init__(coordinator, entry)
+        self._attr_unique_id = f"{entry.entry_id}_battery_float_voltage"
 
     @property
     def native_value(self) -> float | None:

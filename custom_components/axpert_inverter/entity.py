@@ -1,6 +1,8 @@
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .const import DOMAIN, CONF_DEVICE_PATH
+
 
 class AxpertEntity(CoordinatorEntity):
     """Base class for Axpert entities."""
@@ -13,9 +15,11 @@ class AxpertEntity(CoordinatorEntity):
     @property
     def device_info(self):
         """Return device information."""
+        entry: ConfigEntry = self.coordinator.config_entry
+        device_path = entry.data.get(CONF_DEVICE_PATH, "unknown")
         return {
-            "identifiers": {(DOMAIN, "axpert_inverter")},
-            "name": "Axpert Inverter",
+            "identifiers": {(DOMAIN, entry.entry_id)},
+            "name": entry.title,
             "manufacturer": "Voltronic",
             "model": self.coordinator.model_name,
             "model_id": self.coordinator.model_id,
